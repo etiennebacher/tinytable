@@ -20,6 +20,7 @@
 #' @param data a list of data frames or vectors to be used by the plotting functions in `fun`.
 #' @param images Character vector, the paths to the images to be inserted. Paths are relative to the main table file or Quarto (Rmarkdown) document.
 #' @param assets Path to the directory where generated assets are stored. This path is relative to the location where a table is saved.
+#' @param sprintf String passed to the `?sprintf` function to format numbers or interpolate strings with a user-defined pattern (similar to the `glue` package, but using Base R). This string must insert a single `%s` entry, where the image will be inserted.
 #' @param ... Extra arguments are passed to the function in `fun`. Important: Custom plotting functions must always have `...` as an argument.
 #'
 #' @return A modified tinytable object with images or plots inserted.
@@ -37,6 +38,7 @@ plot_tt <- function(
     height = 1,
     asp = 1 / 3,
     images = NULL,
+    sprintf = "%s",
     assets = "tinytable_assets",
     ...) {
   # non-standard evaluation before anything else
@@ -61,7 +63,7 @@ plot_tt <- function(
   assert_character(images, len = len, null.ok = TRUE)
 
   if (!is.null(images) && length(images) != len) {
-    msg <- sprintf(
+    msg <- base::sprintf(
       "`images` must match the dimensions of `i` and `j`: length %s.",
       len
     )
@@ -114,7 +116,8 @@ plot_tt <- function(
     xlim = xlim,
     height = height,
     images = images,
-    assets = assets
+    assets = assets,
+    sprintf = sprintf
   )
   cal <- c(cal, list(...))
   cal <- do.call(call, cal)
@@ -136,6 +139,7 @@ plot_tt_lazy <- function(
     xlim = NULL,
     images = NULL,
     assets = "tinytable_assets",
+    sprintf = sprintf,
     ...) {
   out <- x@data_body
 
@@ -200,33 +204,39 @@ plot_tt_lazy <- function(
 
   if (isTRUE(x@output == "latex")) {
     cell <- "\\includegraphics[height=%sem]{%s}"
-    cell <- sprintf(cell, height, images)
+    cell <- base::sprintf(cell, height, images)
+    cell <- base::sprintf(sprintf, cell)
   } else if (isTRUE(x@output %in% c("html", "bootstrap", "tabulator")) && isTRUE(x@html_portable)) {
     assert_dependency("base64enc")
 
     http <- grepl("^http", trimws(images))
     images[!http] <- encode(images[!http])
-    cell <- sprintf('<img src="%s" style="height: %sem;">', images, height)
+    cell <- base::sprintf('<img src="%s" style="height: %sem;">', images, height)
+    cell <- base::sprintf(sprintf, cell)
   } else if (isTRUE(x@output %in% c("html", "bootstrap", "tabulator"))) {
     cell <- ifelse(
       grepl("^http", trimws(images)),
       '<img src="%s" style="height: %sem;">',
       ifelse(
-        grepl("^/", trimws(images)) | grepl("^[A-Za-z]:", trimws(images)),  # absolute paths (Unix/Windows)
+        grepl("^/", trimws(images)) | grepl("^[A-Za-z]:", trimws(images)), # absolute paths (Unix/Windows)
         '<img src="%s" style="height: %sem;">',
-        '<img src="./%s" style="height: %sem;">'  # relative paths
+        '<img src="./%s" style="height: %sem;">' # relative paths
       )
     )
-    cell <- sprintf(cell, images, height)
+    cell <- base::sprintf(cell, images, height)
+    cell <- base::sprintf(sprintf, cell)
   } else if (isTRUE(x@output == "markdown")) {
     cell <- "![](%s){ height=%s }"
-    cell <- sprintf(cell, images, height * 16)
+    cell <- base::sprintf(cell, images, height * 16)
+    cell <- base::sprintf(sprintf, cell)
   } else if (isTRUE(x@output == "typst")) {
     cell <- '#image("%s", height: %sem)'
-    cell <- sprintf(cell, images, height)
+    cell <- base::sprintf(cell, images, height)
+    cell <- base::sprintf(sprintf, cell)
   } else if (isTRUE(x@output == "dataframe")) {
     cell <- "%s"
-    cell <- sprintf(cell, images)
+    cell <- base::sprintf(cell, images)
+    cell <- base::sprintf(sprintf, cell)
   } else {
     stop("here be dragons")
   }
@@ -329,5 +339,5 @@ encode <- function(images) {
   }
 
   encoded <- sapply(images, base64enc::base64encode)
-  sprintf("data:image/%s;base64, %s", ext, encoded)
+  base::sprintf("data:image/%s;base64, %s", ext, encoded)
 }
