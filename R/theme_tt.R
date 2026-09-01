@@ -48,9 +48,9 @@ theme_tt <- function(x, theme, ...) {
     legacy <- c(
       "bootstrap" = "theme_html(x, engine = \"bootstrap\", class = ...)",
       "tabular" = "theme_latex(x, environment = \"tabular\")",
-      "resize" = "theme_latex(x, resize_width = ..., resize_direction = ...)",
+      "resize" = "theme_latex() or theme_typst() with resize_width = ..., resize_direction = ...",
       "placement" = "theme_latex(x, placement = ...)",
-      "multipage" = "theme_latex(x, multipage = TRUE)",
+      "multipage" = "theme_latex() or theme_typst() with multipage = TRUE",
       "spacing" = "the `height` argument of tt()",
       "rotating" = "theme_rotate(x, angle = ...)"
     )
